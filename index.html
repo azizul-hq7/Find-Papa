@@ -5,24 +5,30 @@
   <title>Where is Chintu ke Papa?</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    /* Basic reset */
+    /* Reset & typography */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       color: #333;
-      display: flex; align-items: center; justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
+
+    /* Card container */
     .card {
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.1);
       padding: 2rem;
-      max-width: 360px;
+      max-width: 400px;
       width: 100%;
       text-align: center;
     }
+
     h1 {
       font-size: 1.5rem;
       margin-bottom: 1.5rem;
@@ -30,39 +36,69 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    button {
-      background: #667eea;
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      margin: 0.5rem 0.25rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
       color: #fff;
+      background: #667eea;
       border: none;
       border-radius: 6px;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
       cursor: pointer;
       transition: background 0.3s ease;
-      margin-bottom: 1rem;
     }
-    button:hover {
+    .btn:hover {
       background: #5a67d8;
     }
+
+    /* Result area */
     #result {
+      margin-top: 1rem;
       font-size: 1.1rem;
       padding: 1rem;
       border-radius: 6px;
       background: #f0f4ff;
+      min-height: 3em;
     }
     .busy { color: #c53030; font-weight: bold; }
     .free { color: #2f855a; font-weight: bold; }
+    .lunch { color: #d69e2e; font-weight: bold; }
+
+    /* Schedule list */
+    #today-sched {
+      text-align: left;
+      margin-top: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #today-sched li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* Responsive tweaks */
+    @media(min-width: 600px) {
+      .btn { margin: 0.5rem; }
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Where is Chintu ke Papa?</h1>
-    <button id="checkBtn">Find Papa</button>
-    <div id="result">Click the button to find him.</div>
+    <button id="busyBtn" class="btn">Is Papa Busy?</button>
+    <button id="freeBtn" class="btn">When Will Papa Be Free?</button>
+    <button id="schedBtn" class="btn">Today's Schedule</button>
+
+    <div id="result">Click a button above to get started.</div>
+
+    <!-- hidden until you click "Today's Schedule" -->
+    <ul id="today-sched" style="display:none"></ul>
   </div>
 
   <script>
-    // Define Papa's weekly timetable
+    // Papa's weekly timetable
     const schedule = {
       Monday: [
         { course: 'CE3030', start: '08:00', end: '09:00' },
@@ -101,34 +137,109 @@
       ],
     };
 
-    // Utility to parse "HH:MM" into minutes since midnight
+    // Lunch window
+    const lunchStart = toMinutes('12:00');
+    const lunchEnd   = toMinutes('13:00');
+
+    // Helpers
     function toMinutes(t) {
       const [h, m] = t.split(':').map(Number);
       return h * 60 + m;
     }
+    function format12(t) {
+      let [h, m] = t.split(':').map(Number);
+      const suffix = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2,'0')} ${suffix}`;
+    }
 
-    document.getElementById('checkBtn').addEventListener('click', () => {
+    // Get today’s slots
+    function getTodaySlots() {
+      const day = new Date().toLocaleString('en-US',{ weekday:'long' });
+      return schedule[day] || [];
+    }
+
+    // Button handlers
+    document.getElementById('busyBtn').onclick = () => {
       const now = new Date();
-      const day = now.toLocaleString('en-US', { weekday: 'long' });
-      const minutesNow = now.getHours() * 60 + now.getMinutes();
-      const today = schedule[day] || [];
+      const mins = now.getHours()*60 + now.getMinutes();
+      const today = getTodaySlots();
 
-      // Find if now is within any class slot
-      const currentClass = today.find(slot =>
-        minutesNow >= toMinutes(slot.start) &&
-        minutesNow < toMinutes(slot.end)
-      );
+      const inClass = today.find(s => mins >= toMinutes(s.start) && mins < toMinutes(s.end));
 
-      const resultDiv = document.getElementById('result');
-      if (currentClass) {
-        resultDiv.innerHTML = `
-          <p class="busy">Papa is busy in <strong>${currentClass.course}</strong></p>
-          <p>From ${currentClass.start} to ${currentClass.end}</p>
-        `;
-      } else {
-        resultDiv.innerHTML = `<p class="free">Papa is free right now!</p>`;
+      const result = document.getElementById('result');
+      document.getElementById('today-sched').style.display = 'none';
+
+      if (inClass) {
+        result.innerHTML = `<p class="busy">Papa is busy in <strong>${inClass.course}</strong><br>
+                            (${format12(inClass.start)} – ${format12(inClass.end)})</p>`;
       }
-    });
+      else if (mins >= lunchStart && mins < lunchEnd) {
+        result.innerHTML = `<p class="lunch">Papa is taking Lunch<br>
+                            (${format12('12:00')} – ${format12('13:00')})</p>`;
+      }
+      else {
+        result.innerHTML = `<p class="free">Papa is free right now!</p>`;
+      }
+    };
+
+    document.getElementById('freeBtn').onclick = () => {
+      const now = new Date();
+      const mins = now.getHours()*60 + now.getMinutes();
+      const today = getTodaySlots();
+      let nextFree;
+
+      // if in lunch, free at end of lunch
+      if (mins >= lunchStart && mins < lunchEnd) {
+        nextFree = lunchEnd;
+      } else {
+        // find the next end of any ongoing or upcoming class
+        // first, if currently in class, free at that class.end
+        const inClass = today.find(s => mins >= toMinutes(s.start) && mins < toMinutes(s.end));
+        if (inClass) {
+          nextFree = toMinutes(inClass.end);
+        } else {
+          // otherwise find next class start
+          const upcoming = today.find(s => toMinutes(s.start) > mins);
+          if (upcoming) {
+            nextFree = toMinutes(upcoming.start);
+          }
+        }
+      }
+
+      const result = document.getElementById('result');
+      document.getElementById('today-sched').style.display = 'none';
+
+      if (nextFree != null) {
+        // ensure it's not during lunch
+        if (nextFree > lunchStart && nextFree <= lunchEnd) nextFree = lunchEnd;
+        const h = Math.floor(nextFree/60).toString().padStart(2,'0');
+        const m = (nextFree%60).toString().padStart(2,'0');
+        result.innerHTML = `<p>Papa will be free at <strong>${format12(`${h}:${m}`)}</strong></p>`;
+      } else {
+        result.innerHTML = `<p class="free">No more classes today — Papa is free!</p>`;
+      }
+    };
+
+    document.getElementById('schedBtn').onclick = () => {
+      const today = getTodaySlots();
+      const list = document.getElementById('today-sched');
+      const result = document.getElementById('result');
+      result.innerHTML = '';
+      list.innerHTML = '';
+      if (today.length) {
+        today.forEach(s => {
+          const li = document.createElement('li');
+          li.textContent = `${format12(s.start)} – ${format12(s.end)} : ${s.course}`;
+          list.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No classes today. Papa is free!';
+        list.appendChild(li);
+      }
+      list.style.display = 'block';
+    };
   </script>
 </body>
 </html>
