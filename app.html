@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Where is Chintu ke Papa?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Basic reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #333;
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    button {
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-bottom: 1rem;
+    }
+    button:hover {
+      background: #5a67d8;
+    }
+    #result {
+      font-size: 1.1rem;
+      padding: 1rem;
+      border-radius: 6px;
+      background: #f0f4ff;
+    }
+    .busy { color: #c53030; font-weight: bold; }
+    .free { color: #2f855a; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Where is Chintu ke Papa?</h1>
+    <button id="checkBtn">Find Papa</button>
+    <div id="result">Click the button to find him.</div>
+  </div>
+
+  <script>
+    // Define Papa's weekly timetable
+    const schedule = {
+      Monday: [
+        { course: 'CE3030', start: '08:00', end: '09:00' },
+        { course: 'BT1010', start: '09:00', end: '10:00' },
+        { course: 'CE3060', start: '10:00', end: '11:00' },
+        { course: 'CE3350', start: '11:00', end: '12:00' },
+        { course: 'CE4030', start: '14:00', end: '17:00' },
+      ],
+      Tuesday: [
+        { course: 'BT1010', start: '08:00', end: '09:00' },
+        { course: 'CE3060', start: '09:00', end: '10:00' },
+        { course: 'CE3350', start: '10:00', end: '11:00' },
+        { course: 'CE3030', start: '13:00', end: '14:00' },
+        { course: 'CE3410', start: '14:00', end: '17:00' },
+        { course: 'HS1090A', start: '17:00', end: '18:00' },
+        { course: 'GN6106', start: '18:00', end: '20:00' },
+      ],
+      Wednesday: [
+        { course: 'CE3060', start: '08:00', end: '09:00' },
+        { course: 'CE3350', start: '09:00', end: '10:00' },
+        { course: 'HS1090A', start: '11:00', end: '12:00' },
+        { course: 'BT1010', start: '13:00', end: '14:00' },
+      ],
+      Thursday: [
+        { course: 'HS1090A', start: '09:00', end: '10:00' },
+        { course: 'CE3030', start: '10:00', end: '11:00' },
+        { course: 'CE3350', start: '13:00', end: '14:00' },
+        { course: 'CE3030', start: '14:00', end: '17:00' },
+      ],
+      Friday: [
+        { course: 'HS1090A', start: '08:00', end: '09:00' },
+        { course: 'CE3030', start: '10:00', end: '11:00' },
+        { course: 'BT1010', start: '11:00', end: '12:00' },
+        { course: 'CE3060', start: '13:00', end: '15:00' },
+        { course: 'CE3060', start: '15:00', end: '17:00' },
+      ],
+    };
+
+    // Utility to parse "HH:MM" into minutes since midnight
+    function toMinutes(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    document.getElementById('checkBtn').addEventListener('click', () => {
+      const now = new Date();
+      const day = now.toLocaleString('en-US', { weekday: 'long' });
+      const minutesNow = now.getHours() * 60 + now.getMinutes();
+      const today = schedule[day] || [];
+
+      // Find if now is within any class slot
+      const currentClass = today.find(slot =>
+        minutesNow >= toMinutes(slot.start) &&
+        minutesNow < toMinutes(slot.end)
+      );
+
+      const resultDiv = document.getElementById('result');
+      if (currentClass) {
+        resultDiv.innerHTML = `
+          <p class="busy">Papa is busy in <strong>${currentClass.course}</strong></p>
+          <p>From ${currentClass.start} to ${currentClass.end}</p>
+        `;
+      } else {
+        resultDiv.innerHTML = `<p class="free">Papa is free right now!</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
